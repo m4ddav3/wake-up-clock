@@ -84,7 +84,7 @@ struct Color { // RGB color structure
   byte g;
   byte b;
 } color;
- 
+
 struct HSL { // HSL color (hue-saturation-lightness)
   byte h;
   byte s;
@@ -95,7 +95,10 @@ struct HSL { // HSL color (hue-saturation-lightness)
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
 
-// This gets set as the default handler, and gets called when no other command matches.
+/*
+    This gets set as the default handler, and gets called when
+    no other command matches.
+*/
 void unrecognized(const char *command) {
   Serial.println("Unrecognised command. Ensure you have newline enabled");
 }
@@ -112,9 +115,9 @@ void printAlarm( DateTime *alarm ) {
 void processAlarm() {
   char *arg;
   arg = sCmd.next();
-  
+
   String arg1 = String(arg);
-  
+
   if (arg1 != NULL) {
     if (arg1.equalsIgnoreCase("GET")) {
       printAlarm( &alarm );
@@ -124,19 +127,19 @@ void processAlarm() {
 //      Serial.println( arg2.length() );
       // We are expecting a time next, so 5 chars long = 00:00
       if (arg2.length() == 5) {
-        
+
         uint8_t hours   = (int) arg2.substring(0,2).toInt();
         uint8_t minutes = (int) arg2.substring(3,5).toInt();
-        
+
         DateTime tempAlarm( 2000,1,1,hours,minutes );
         DateTime newAlarm( tempAlarm.unixtime() - 1200L );
-        
+
 //        Serial.println ( newAlarm.unixtime() );
 //        Serial.println ( (uint8_t) newAlarm.unixtime() & 0xFF );
-        
+
         alarm = newAlarm;
         printAlarm( &alarm );
-        
+
         EEPROM_writeAnything(0, alarm);
         alarm_time = (alarm.hour()*100)+alarm.minute();
       }
@@ -150,16 +153,16 @@ void processAlarm() {
 void processTime() {
   char *arg;
   arg = sCmd.next();
-  
+
   String arg1 = String(arg);
-  
+
   uint16_t year = 2000;
   uint8_t month = 1;
   uint8_t dd = 1;
   uint8_t hh = 0;
   uint8_t mm = 0;
   uint8_t ss = 0;
-  
+
   if (arg1 != NULL) {
 //    if (arg1.equalsIgnoreCase("GET")) {
 //      printAlarm( &alarm );
@@ -168,15 +171,15 @@ void processTime() {
     if (arg1.equalsIgnoreCase("SET")) {
       String sDate = String(sCmd.next());
       String sTime = String(sCmd.next());
-      
+
       // We are expecting a date, 2013-01-01, 10 chars long
-      
+
       if (sDate.length() == 10) {
         year  = (uint16_t) sDate.substring(0,4).toInt();
         month = (uint8_t)  sDate.substring(6,8).toInt();
         dd    = (uint8_t)  sDate.substring(9,10).toInt();
       }
-      
+
       // We are expecting a time next, so 8 chars long = 00:00:00
       if (sTime.length() == 8) {
         hh = (uint8_t) sTime.substring(0,2).toInt();
@@ -199,10 +202,10 @@ void setup() {
 //#ifdef DEBUG
   Serial.begin(57600); // for debug purposes
 //#endif
-  
+
   // Set up the LCD
   lcd.begin(16, 2);
-  
+
   // Set up custom characters
   for (int i=0;i<NUM_CUSTOM_GLYPHS;i++) {
     lcd.setCursor(0,1);
@@ -230,7 +233,7 @@ void setup() {
     Serial.println( __TIME__ );
   }
   delay(200);
-  
+
 
 /*
   // Set up the pot inputs
@@ -241,7 +244,7 @@ void setup() {
 
   // Set up the button pin
   pinMode( BUTTON1, INPUT );
-  
+
 /*
   // Set up and start the timer with interrupt
   TCCR2B = 0x00;
@@ -254,32 +257,32 @@ void setup() {
 */
   // Initialise variables for reset condition
   mode = 0x00;
-  
+
   // Initialise start condition for sunrise
   hslcolor.h = 0;
   hslcolor.s = 255;
   hslcolor.l = 0;
-  
+
   sCmd.addCommand("ALARM", processAlarm);
   sCmd.addCommand("TIME",  processTime );
   sCmd.setDefaultHandler(unrecognized);
-  
+
   EEPROM_readAnything(0, alarm);
   alarm_time = (alarm.hour()*100)+alarm.minute();
-  
-  // Enable interrupts  
+
+  // Enable interrupts
   //sei();
 
   lcd.clear();
 }
- 
+
 /* -----------------------------------------------------
  * Timer1 overflow interrupt
- * F_CPU 9.600.000 Hz 
- * -> prescaler 0, overrun 256 -> 37.500 Hz 
+ * F_CPU 9.600.000 Hz
+ * -> prescaler 0, overrun 256 -> 37.500 Hz
  * -> 256 steps -> 146 Hz
  *
- * Set global r, g and b to control the color. 
+ * Set global r, g and b to control the color.
  * Range is for rgb is 0-255 (dark to full power)
  */
 static uint8_t count = 0;
@@ -292,7 +295,7 @@ static byte port_mask = 0x00;
 #endif
 
 /*
-SIGNAL(TIMER2_OVF_vect) {	
+SIGNAL(TIMER2_OVF_vect) {
   // every 256th step take over new values
 #ifdef PWM_METHOD_1
   if (++count == 0) {
@@ -307,7 +310,7 @@ SIGNAL(TIMER2_OVF_vect) {
       RGB_PORT |= (1 << BPIN_BIT);
     }
   }
-  
+
   // check if switch off r, g and b
   if (count == current_color.r) {
     RGB_PORT &= ~(1 << RPIN_BIT);
@@ -320,7 +323,7 @@ SIGNAL(TIMER2_OVF_vect) {
   }
 #endif
 
-#ifdef PWM_METHOD_2  
+#ifdef PWM_METHOD_2
   if (++count == 0) {
     current_color = color;
     if (current_color.r > 0) {
@@ -334,9 +337,9 @@ SIGNAL(TIMER2_OVF_vect) {
     }
     RGB_PORT |= port_mask;
   }
-  
+
   port_mask = 0x00;
-  
+
   // check if switch off r, g and b
   if (count == current_color.r) {
     port_mask |= (1 << RPIN_BIT);
@@ -347,7 +350,7 @@ SIGNAL(TIMER2_OVF_vect) {
   if (count == current_color.b) {
     port_mask |= (1 << BPIN_BIT);
   }
-  
+
   RGB_PORT &= ~port_mask;
 #endif
 
@@ -365,36 +368,39 @@ struct Color hslToRgb(struct HSL *hsl) {
   // instead of the usual "." dot.
 */
   Color rgb; // this will be the output
-  
+
   if (hsl->s == 0) {
     rgb.r = hsl->l;
     rgb.g = hsl->l;
     rgb.b = hsl->l;
-    
+
     return rgb;
   }
   if (hsl->l == 0) {
      rgb.r = 0;
      rgb.g = 0;
      rgb.b = 0;
-     
+
      return rgb;
   }
-  
+
   word temp; // temporary two-byte integer number for calculations
-  
+
   byte top = hsl->l;
   temp = (top * (255 - hsl->s));
   byte bottom = (byte) (temp/255); // temp >> 8 is wrong
-  
+
   byte cont = top - bottom;    // something like "contrast", but it isn't
-  
+
   byte mod = hsl->h % 42;      // 42 * 6 = 252, so 252 is the maximal hue
-  byte segment = hsl->h / 42;  // division by power of two would be some 200 times faster
-  temp = mod * cont;           // here it comes a big product, so our temp is needed
+  byte segment = hsl->h / 42;  // division by power of two would be
+                               //     some 200 times faster
+  temp = mod * cont;           // here it comes a big product, so our
+                               //     temp is needed
   byte x = (byte) (temp / 42); // scale it down
-  
-  // to understand this part, please refer to: http://en.wikipedia.org/wiki/HSL_and_HSV#From_HSV
+
+  // to understand this part, please refer to:
+  // http://en.wikipedia.org/wiki/HSL_and_HSV#From_HSV
   switch (segment) {
     case 0:
       rgb.r = top;
@@ -431,7 +437,7 @@ struct Color hslToRgb(struct HSL *hsl) {
       rgb.g = 0;
       rgb.b = 0;
   }
-  
+
   return rgb; // here you go!
 }
 
@@ -483,7 +489,7 @@ void showTime( DateTime *now ) {
 //  DateTime now = RTC.now();
 
   if (now->unixtime() == last_time.unixtime()) return;
-    
+
   last_time = *now;
 
   // If the time hasn't changed, no need to update the display
@@ -497,10 +503,10 @@ void showTime( DateTime *now ) {
       showNumber( now->hour(), 0, 0 );
     }
   }
-  
+
   // Blinking colon for seconds display!
   showColon( now->second() & 1 );
-  
+
 //  if (mins != last_mins) {
 //    last_mins = mins;
 //    showNumber( mins, 2, 0 );
@@ -531,9 +537,9 @@ uint32_t sunrise_last_invoked = 0;
 */
 void simulate_sunrise( uint32_t timenow ) {
   if (timenow - sunrise_last_invoked >= 4) {
-    
+
     sunrise_last_invoked = timenow;
-    
+
     switch (phase) {
       case 0:
         hslcolor.h = 4;
@@ -571,7 +577,7 @@ void simulate_sunrise( uint32_t timenow ) {
         alarm_triggered = false;
         break;
     }
-    
+
     color = hslToRgb(&hslcolor);
   }
 }
@@ -579,24 +585,26 @@ void simulate_sunrise( uint32_t timenow ) {
 
 
 void loop() {
-   
+
    /*
     * a trimmer resistor voltage divider can be connected
     * to the analog input so the color can be set up here.
-    * please note, that maximal value for hue is 252, not 255. 
+    * please note, that maximal value for hue is 252, not 255.
     * larger values than 252 will produce RGB(0,0,0) output
     */
 //   hslcolor.h = i; // slow sawtooth-function as hue
 //   hslcolor.s = 255;  // some constant here
-//   hslcolor.l = 255-j; // lightness will change rapidly in a form of a triangle-wave
+// lightness will change rapidly in a form of a triangle-wave
+//   hslcolor.l = 255-j;
 
 /*
   hslcolor.h = (byte) map( analogRead( HUE_PIN ), 0, 1023, 0, 251 );
   hslcolor.s = (byte) map( analogRead( SAT_PIN ), 0, 1023, 0, 255 );
   hslcolor.l = (byte) map( analogRead( LUM_PIN ), 0, 1023, 0, 255 );
 
-  color = hslToRgb(&hslcolor);  // convert HSL to RGB, which can be "written" to the LEDs
-*/ 
+  // convert HSL to RGB, which can be "written" to the LEDs
+  color = hslToRgb(&hslcolor);
+*/
 #ifdef DEBUG // to see if something is wrong
   Serial.print("\t H: ");
   Serial.print(hslcolor.h, DEC);
@@ -604,7 +612,7 @@ void loop() {
   Serial.print(hslcolor.s, DEC);
   Serial.print("\t L: ");
   Serial.print(hslcolor.l, DEC);
-  
+
   Serial.print("\t R: ");
   Serial.print(color.r, DEC);
   Serial.print("\t G: ");
@@ -612,7 +620,7 @@ void loop() {
   Serial.print("\t B: ");
   Serial.println(color.b, DEC);
 #endif
-  
+
   // increment the variables
 #define TOP 252
 /*  lcd.clear();
@@ -636,13 +644,13 @@ void loop() {
   lcd.print( current_color.b );
   lcd.setCursor(15,0);
   lcd.print( phase );*/
-  
+
   // This was another likely culprit in the abnormal colour change stepping
   delay(200); // spend some time here to slow things down
-  
+
   DateTime now = RTC.now();
   showTime( &now );
-  
+
   if (alarm_triggered == false) {
     uint16_t nowtime = (now.hour()*100) + now.minute();
 //    Serial.println(nowtime);
@@ -659,7 +667,7 @@ void loop() {
   if (alarm_triggered == true) {
     simulate_sunrise( now.unixtime() );
   }
-  
+
   sCmd.readSerial();
 }
 
@@ -691,5 +699,4 @@ AB
   until luminance = 150
   hue +1 to 42
   saturation -1 to 0
-  
 */
