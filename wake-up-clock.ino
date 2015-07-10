@@ -172,28 +172,24 @@ void processTime() {
       // We are expecting a date, 2013-01-01, 10 chars long
       
       if (sDate.length() == 10) {
-        
         year  = (uint16_t) sDate.substring(0,4).toInt();
         month = (uint8_t)  sDate.substring(6,8).toInt();
         dd    = (uint8_t)  sDate.substring(9,10).toInt();
-        
       }
       
       // We are expecting a time next, so 8 chars long = 00:00:00
       if (sTime.length() == 8) {
-        
         hh = (uint8_t) sTime.substring(0,2).toInt();
         mm = (uint8_t) sTime.substring(3,5).toInt();
         ss = (uint8_t) sTime.substring(6,8).toInt();
       }
-        
+
       DateTime newTime( year,month,dd,hh,mm,ss );
-        
-//        Serial.println ( newAlarm.unixtime() );
-//        Serial.println ( (uint8_t) newAlarm.unixtime() & 0xFF );
-        
+
+//      Serial.println ( newAlarm.unixtime() );
+//      Serial.println ( (uint8_t) newAlarm.unixtime() & 0xFF );
+
         RTC.adjust( newTime );
-        
       }
     }
 }
@@ -246,7 +242,7 @@ void setup() {
   // Set up the button pin
   pinMode( BUTTON1, INPUT );
   
-
+/*
   // Set up and start the timer with interrupt
   TCCR2B = 0x00;
 
@@ -255,7 +251,7 @@ void setup() {
   TIMSK2 |= (1 << TOIE2);
 //  TCCR2B |= (0 << CS02) | (0 << CS01) | (1 << CS00);
   TCCR2B |= (1 << CS00);
-  
+*/
   // Initialise variables for reset condition
   mode = 0x00;
   
@@ -272,7 +268,8 @@ void setup() {
   alarm_time = (alarm.hour()*100)+alarm.minute();
   
   // Enable interrupts  
-  sei();
+  //sei();
+
   lcd.clear();
 }
  
@@ -294,6 +291,7 @@ static Color current_color = color;
 static byte port_mask = 0x00;
 #endif
 
+/*
 SIGNAL(TIMER2_OVF_vect) {	
   // every 256th step take over new values
 #ifdef PWM_METHOD_1
@@ -354,7 +352,8 @@ SIGNAL(TIMER2_OVF_vect) {
 #endif
 
 }
- 
+*/
+
 struct Color hslToRgb(struct HSL *hsl) {
 /*
   // not exactly, but something similar
@@ -386,7 +385,7 @@ struct Color hslToRgb(struct HSL *hsl) {
   
   byte top = hsl->l;
   temp = (top * (255 - hsl->s));
-  byte bottom = (byte) (temp /255 ); // temp >> 8 is wrong
+  byte bottom = (byte) (temp/255); // temp >> 8 is wrong
   
   byte cont = top - bottom;    // something like "contrast", but it isn't
   
