@@ -4,8 +4,13 @@
  */
 
 #define DEBUG0
-#define PWM_METHOD_1
 #define HARDWARE_RTC
+
+#define TOP 252
+
+#define BUTTON1 2
+#define NEOPIN 8
+#define NEONUM 12
 
 //#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
@@ -21,19 +26,7 @@ RTC_DS1307 RTC;
 #define I2C_ADDR_LCD 0x38
 LiquidCrystal_I2C lcd(I2C_ADDR_LCD);
 
-#define NEOPIN 8
-#define NEONUM 12
-
 SerialCommand sCmd;
-
-// Should try and keep RGB pins on the same port and on consecutive pins
-// Optimisations can be made later to manipulate the ports directly and
-// at the same time
-#define HUE_PIN A0
-#define SAT_PIN A1
-#define LUM_PIN A2
-
-#define BUTTON1 2
 
 #define NUM_CUSTOM_GLYPHS 5
 byte glyphs[NUM_CUSTOM_GLYPHS][8] = {
@@ -234,27 +227,9 @@ void setup() {
   }
   delay(200);
 
-
-/*
-  // Set up the pot inputs
-  pinMode( HUE_PIN, INPUT );
-  pinMode( SAT_PIN, INPUT );
-  pinMode( LUM_PIN, INPUT );
-*/
-
   // Set up the button pin
   pinMode( BUTTON1, INPUT );
 
-/*
-  // Set up and start the timer with interrupt
-  TCCR2B = 0x00;
-
-//  TIFR2 |= (0 << OCIE2B) | (0 << OCIE2A) | (1 << TOV2);
-  // enable timer 0 interrupt
-  TIMSK2 |= (1 << TOIE2);
-//  TCCR2B |= (0 << CS02) | (0 << CS01) | (1 << CS00);
-  TCCR2B |= (1 << CS00);
-*/
   // Initialise variables for reset condition
   mode = 0x00;
 
@@ -289,73 +264,6 @@ static uint8_t count = 0;
 
 // A copy of color will be taken at the start of each PWM phase
 static Color current_color = color;
-
-#ifdef PWM_METHOD_2
-static byte port_mask = 0x00;
-#endif
-
-/*
-SIGNAL(TIMER2_OVF_vect) {
-  // every 256th step take over new values
-#ifdef PWM_METHOD_1
-  if (++count == 0) {
-    current_color = color;
-    if (current_color.r > 0) {
-      RGB_PORT |= (1 << RPIN_BIT);
-    }
-    if (current_color.g > 0) {
-      RGB_PORT |= (1 << GPIN_BIT);
-    }
-    if (current_color.b > 0) {
-      RGB_PORT |= (1 << BPIN_BIT);
-    }
-  }
-
-  // check if switch off r, g and b
-  if (count == current_color.r) {
-    RGB_PORT &= ~(1 << RPIN_BIT);
-  }
-  if (count == current_color.g) {
-    RGB_PORT &= ~(1 << GPIN_BIT);
-  }
-  if (count == current_color.b) {
-    RGB_PORT &= ~(1 << BPIN_BIT);
-  }
-#endif
-
-#ifdef PWM_METHOD_2
-  if (++count == 0) {
-    current_color = color;
-    if (current_color.r > 0) {
-      port_mask |= (1 << RPIN_BIT);
-    }
-    if (current_color.g > 0) {
-      port_mask |= (1 << GPIN_BIT);
-    }
-    if (current_color.b > 0) {
-      port_mask |= (1 << BPIN_BIT);
-    }
-    RGB_PORT |= port_mask;
-  }
-
-  port_mask = 0x00;
-
-  // check if switch off r, g and b
-  if (count == current_color.r) {
-    port_mask |= (1 << RPIN_BIT);
-  }
-  if (count == current_color.g) {
-    port_mask |= (1 << GPIN_BIT);
-  }
-  if (count == current_color.b) {
-    port_mask |= (1 << BPIN_BIT);
-  }
-
-  RGB_PORT &= ~port_mask;
-#endif
-
-}
-*/
 
 struct Color hslToRgb(struct HSL *hsl) {
 /*
@@ -441,8 +349,8 @@ struct Color hslToRgb(struct HSL *hsl) {
   return rgb; // here you go!
 }
 
-uint8_t last_mins     = 0; // Last displayed minutes
-uint8_t last_hour     = 0; // Last displayed hour
+uint8_t last_mins = 0; // Last displayed minutes
+uint8_t last_hour = 0; // Last displayed hour
 
 void showDigit(int digit, int position, int extra_offset) {
   int x = position * (digitWidth + 1) + extra_offset;
@@ -486,8 +394,6 @@ void showColon(boolean showHide) {
 
 DateTime last_time = (2000,1,1,0,0,0);
 void showTime( DateTime *now ) {
-//  DateTime now = RTC.now();
-
   if (now->unixtime() == last_time.unixtime()) return;
 
   last_time = *now;
@@ -507,10 +413,6 @@ void showTime( DateTime *now ) {
   // Blinking colon for seconds display!
   showColon( now->second() & 1 );
 
-//  if (mins != last_mins) {
-//    last_mins = mins;
-//    showNumber( mins, 2, 0 );
-//  }
   if (now->minute() != last_mins) {
     last_mins = now->minute();
     if (now->minute() >= 10) {
@@ -592,20 +494,11 @@ void loop() {
     * please note, that maximal value for hue is 252, not 255.
     * larger values than 252 will produce RGB(0,0,0) output
     */
-//   hslcolor.h = i; // slow sawtooth-function as hue
-//   hslcolor.s = 255;  // some constant here
-// lightness will change rapidly in a form of a triangle-wave
-//   hslcolor.l = 255-j;
 
-/*
-  hslcolor.h = (byte) map( analogRead( HUE_PIN ), 0, 1023, 0, 251 );
-  hslcolor.s = (byte) map( analogRead( SAT_PIN ), 0, 1023, 0, 255 );
-  hslcolor.l = (byte) map( analogRead( LUM_PIN ), 0, 1023, 0, 255 );
-
-  // convert HSL to RGB, which can be "written" to the LEDs
-  color = hslToRgb(&hslcolor);
-*/
-#ifdef DEBUG // to see if something is wrong
+#ifdef DEBUG
+  /*
+   * Debug output on the serial console
+  */
   Serial.print("\t H: ");
   Serial.print(hslcolor.h, DEC);
   Serial.print("\t S: ");
@@ -621,29 +514,6 @@ void loop() {
   Serial.println(color.b, DEC);
 #endif
 
-  // increment the variables
-#define TOP 252
-/*  lcd.clear();
-  lcd.print( "H" );
-  lcd.print( hslcolor.h );
-  lcd.setCursor(5,0);
-  lcd.print( "S" );
-  lcd.print( hslcolor.s );
-  lcd.setCursor(10,0);
-  lcd.print( "L" );
-  lcd.print( hslcolor.l );
-
-  lcd.setCursor(0,1);
-  lcd.print( "R" );
-  lcd.print( current_color.r );
-  lcd.setCursor(5,1);
-  lcd.print( "G" );
-  lcd.print( current_color.g );
-  lcd.setCursor(10,1);
-  lcd.print( "B" );
-  lcd.print( current_color.b );
-  lcd.setCursor(15,0);
-  lcd.print( phase );*/
 
   // This was another likely culprit in the abnormal colour change stepping
   delay(200); // spend some time here to slow things down
