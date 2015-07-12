@@ -1,10 +1,13 @@
-
 /*
- * HSL-to-RGB conversion
+ * Notes
+ * 
+ * - Maybe use the 1hz output from the clock to trigger display
+ *   updates and sunrise changes
+ * - Might need to change button1 to another pin (so we can use
+ *   the 1hz output from the clock as an external interrupt)
  */
 
 #define DEBUG0
-#define HARDWARE_RTC
 
 #define TOP 252
 
@@ -117,8 +120,7 @@ void processAlarm() {
     }
     else if (arg1.equalsIgnoreCase("SET")) {
       String arg2 = String(sCmd.next());
-//      Serial.println( arg2.length() );
-      // We are expecting a time next, so 5 chars long = 00:00
+      // We are expecting a time next, 5 chars = 00:00
       if (arg2.length() == 5) {
 
         uint8_t hours   = (int) arg2.substring(0,2).toInt();
@@ -126,9 +128,6 @@ void processAlarm() {
 
         DateTime tempAlarm( 2000,1,1,hours,minutes );
         DateTime newAlarm( tempAlarm.unixtime() - 1200L );
-
-//        Serial.println ( newAlarm.unixtime() );
-//        Serial.println ( (uint8_t) newAlarm.unixtime() & 0xFF );
 
         alarm = newAlarm;
         printAlarm( &alarm );
