@@ -12,8 +12,8 @@
 #define TOP 252
 
 #define BUTTON1 2
-#define NEOPIN 8
-#define NEONUM 12
+#define NEO_PIN 8
+#define NEO_NUMPIX 12
 
 //#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
@@ -23,11 +23,16 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 #include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+  #include <avr/power.h>
+#endif
 
 RTC_DS1307 RTC;
 
 #define I2C_ADDR_LCD 0x38
 LiquidCrystal_I2C lcd(I2C_ADDR_LCD);
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NEO_NUMPIX, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 SerialCommand sCmd;
 
@@ -243,6 +248,9 @@ void setup() {
 
   EEPROM_readAnything(0, alarm);
   alarm_time = (alarm.hour()*100)+alarm.minute();
+
+  pixels.begin();
+  pixels.show();
 
   // Enable interrupts
   //sei();
