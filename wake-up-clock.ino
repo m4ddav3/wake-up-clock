@@ -433,9 +433,23 @@ void showTime( DateTime *now ) {
 
 }
 
-uint8_t phase = 0;
-//uint16_t sunrise_counter = 0;
+uint8_t  phase                = 0;
+uint16_t sunrise_counter      = 0;
 uint32_t sunrise_last_invoked = 0;
+
+/*
+ * We want a new way to light up:
+ * 1. Start with one pixel set to lowest red
+ * 2. Increase number of pixels at lowest red
+ *    Light intensity is not linear, lets try doubling.
+ *    So: 1 -> 2 -> 4 -> 8, and so on
+ * 3. Move the hue by one luminance % 15, also increase luminance
+ *    until luminance >= 150
+ * 4. Move the hue until it hits 32
+ * 5. Decrease saturation to 127
+ * 6. Increase lumincance to 255
+ * 7. Decrease saturation to 0
+ */
 
 
 /*
