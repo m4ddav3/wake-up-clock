@@ -7,13 +7,13 @@
  *   the 1hz output from the clock as an external interrupt)
  */
 
-#define DEBUG0
+#define DEBUG
 
 #define TOP 252
 
 #define BUTTON1 2
-#define NEO_PIN 8
-#define NEO_NUMPIX 12
+#define NEO_PIN 6
+#define NEO_NUMPIX 8
 
 //#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
@@ -250,6 +250,9 @@ void setup() {
   alarm_time = (alarm.hour()*100)+alarm.minute();
 
   pixels.begin();
+  for (int i=0;i<NEO_NUMPIX;i++) {
+    pixels.setPixelColor(i, pixels.Color(127,127,0));
+  }
   pixels.show();
 
   // Enable interrupts
@@ -557,6 +560,10 @@ void loop() {
   }
   if (alarm_triggered == true) {
     simulate_sunrise( now.unixtime() );
+    for (int i=0; i < NEO_NUMPIX; i++) {
+      pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
+    }
+    pixels.show();
   }
 
   sCmd.readSerial();
