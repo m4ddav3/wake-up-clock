@@ -508,7 +508,14 @@ void simulate_sunrise( uint32_t timenow ) {
   }
 }
 
-
+void pad(uint8_t value) {
+  if (value < 10) {
+    Serial.print("  ");
+  }
+  elsif (value < 100) {
+    Serial.print(" ");
+  }
+}
 
 void loop() {
 
@@ -523,18 +530,24 @@ void loop() {
   /*
    * Debug output on the serial console
   */
-  Serial.print("\t H: ");
+  Serial.print("DEBUG: H: ");
+  pad(hslcolor.h);
   Serial.print(hslcolor.h, DEC);
-  Serial.print("\t S: ");
+  Serial.print(" S: ");
+  pad(hslcolor.s);
   Serial.print(hslcolor.s, DEC);
-  Serial.print("\t L: ");
+  Serial.print(" L: ");
+  pad(hslcolor.l);
   Serial.print(hslcolor.l, DEC);
 
   Serial.print("\t R: ");
+  pad(color.r);
   Serial.print(color.r, DEC);
-  Serial.print("\t G: ");
+  Serial.print(" G: ");
+  pad(color.g);
   Serial.print(color.g, DEC);
-  Serial.print("\t B: ");
+  Serial.print(" B: ");
+  pad(color.b);
   Serial.println(color.b, DEC);
 #endif
 
@@ -547,8 +560,6 @@ void loop() {
 
   if (alarm_triggered == false) {
     uint16_t nowtime = (now.hour()*100) + now.minute();
-//    Serial.println(nowtime);
-//    Serial.println(alarm_time);
     if (nowtime == alarm_time) {
       Serial.println("Sunrise triggered via alarm");
       alarm_triggered = true;
