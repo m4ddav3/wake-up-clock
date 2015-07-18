@@ -512,7 +512,7 @@ void pad(uint8_t value) {
   if (value < 10) {
     Serial.print("  ");
   }
-  elsif (value < 100) {
+  else if (value < 100) {
     Serial.print(" ");
   }
 }
