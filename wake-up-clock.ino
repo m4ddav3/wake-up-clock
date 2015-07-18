@@ -197,7 +197,7 @@ void processTime() {
 
 void setup() {
 //#ifdef DEBUG
-  Serial.begin(57600); // for debug purposes
+  Serial.begin(9600); // This speed to communicate with bluetooth module
 //#endif
 
   // Set up the LCD
