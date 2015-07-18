@@ -15,6 +15,8 @@
 #define NEO_PIN 6
 #define NEO_NUMPIX 8
 
+#define RTC_SQR_INTERRUPT 1
+
 //#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
@@ -35,6 +37,12 @@ LiquidCrystal_I2C lcd(I2C_ADDR_LCD);
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NEO_NUMPIX, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 SerialCommand sCmd;
+
+boolean update_enabled = false;
+
+void isr_rtc_pulse() {
+  update_enabled = true;
+}
 
 #define NUM_CUSTOM_GLYPHS 5
 byte glyphs[NUM_CUSTOM_GLYPHS][8] = {
@@ -256,6 +264,8 @@ void setup() {
   pixels.show();
 
   lcd.clear();
+
+  attachInterrupt(RTC_SQR_INTERRUPT, isr_rtc_pulse, RISING);
 
   // Start the 1 second pulse
   rtc.writeSqwPinMode(SquareWave1HZ);
