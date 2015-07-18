@@ -580,27 +580,6 @@ void loop() {
   sCmd.readSerial();
 }
 
-
-
-/*
-
-A 010101010101
-B 001100110011
-
-Positions:
-AB
-00
-10
-01
-11
-00
-10
-01
-11
-
-*/
-
-
 /*
   hue = 4
   luminance ..+15
