@@ -27,7 +27,7 @@
   #include <avr/power.h>
 #endif
 
-RTC_DS1307 RTC;
+RTC_DS1307 rtc;
 
 #define I2C_ADDR_LCD 0x38
 LiquidCrystal_I2C lcd(I2C_ADDR_LCD);
@@ -189,7 +189,7 @@ void processTime() {
 //      Serial.println ( newAlarm.unixtime() );
 //      Serial.println ( (uint8_t) newAlarm.unixtime() & 0xFF );
 
-        RTC.adjust( newTime );
+        rtc.adjust( newTime );
       }
     }
 }
@@ -213,16 +213,16 @@ void setup() {
 
   Wire.begin();
 
-  RTC.begin();
-  if (! RTC.isrunning()) {
+  rtc.begin();
+  if (! rtc.isrunning()) {
     lcd.print("RTC is NOT running!");
     // following line sets the RTC to the date & time this sketch was compiled
-//    RTC.adjust(DateTime(__DATE__, __TIME__));
+//    rtc.adjust(DateTime(__DATE__, __TIME__));
   }
   else {
     lcd.print("RTC is running");
     lcd.setCursor(0,1);
-    DateTime time = RTC.now();
+    DateTime time = rtc.now();
     lcd.print(time.hour());
     lcd.print(':');
     lcd.print(time.minute());
@@ -255,10 +255,10 @@ void setup() {
   }
   pixels.show();
 
-  // Enable interrupts
-  //sei();
-
   lcd.clear();
+
+  // Start the 1 second pulse
+  rtc.writeSqwPinMode(SquareWave1HZ);
 }
 
 /* -----------------------------------------------------
@@ -555,7 +555,7 @@ void loop() {
   // This was another likely culprit in the abnormal colour change stepping
   delay(200); // spend some time here to slow things down
 
-  DateTime now = RTC.now();
+  DateTime now = rtc.now();
   showTime( &now );
 
   if (alarm_triggered == false) {
