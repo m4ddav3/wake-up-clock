@@ -17,7 +17,6 @@
 
 #define RTC_SQR_INTERRUPT 1
 
-//#include <LCD.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <RTClib.h>
@@ -169,10 +168,6 @@ void processTime() {
   uint8_t ss = 0;
 
   if (arg1 != NULL) {
-//    if (arg1.equalsIgnoreCase("GET")) {
-//      printAlarm( &alarm );
-//    }
-//    else if (arg1.equalsIgnoreCase("SET")) {
     if (arg1.equalsIgnoreCase("SET")) {
       String sDate = String(sCmd.next());
       String sTime = String(sCmd.next());
@@ -286,15 +281,7 @@ static uint8_t count = 0;
 static Color current_color = color;
 
 struct Color hslToRgb(struct HSL *hsl) {
-/*
-  // not exactly, but something similar
-  // ^ pass by reference:
-  // the paramter is the memory address of the variable
-  // instead of value of the variable itself. it's  faster and
-  // consumes less memory. please note that the members of this
-  // structure can be accessed using the "->" arrow operator
-  // instead of the usual "." dot.
-*/
+
   Color rgb; // this will be the output
 
   if (hsl->s == 0) {
@@ -320,7 +307,7 @@ struct Color hslToRgb(struct HSL *hsl) {
 
   byte cont = top - bottom;    // something like "contrast", but it isn't
 
-  byte mod = hsl->h % 42;      // 42 * 6 = 252, so 252 is the maximal hue
+  byte mod     = hsl->h % 42;  // 42 * 6 = 252, so 252 is the maximal hue
   byte segment = hsl->h / 42;  // division by power of two would be
                                //     some 200 times faster
   temp = mod * cont;           // here it comes a big product, so our
@@ -374,10 +361,12 @@ uint8_t last_hour = 0; // Last displayed hour
 
 void showDigit(int digit, int position, int extra_offset) {
   int x = position * (digitWidth + 1) + extra_offset;
+  
   lcd.setCursor(x, 0);
   for (int i=0; i<digitWidth; i++) {
     lcd.write( bigDigitsTop[digit][i] );
   }
+  
   lcd.setCursor(x, 1);
   for (int i=0; i<digitWidth; i++) {
     lcd.write( bigDigitsBottom[digit][i] );
@@ -565,26 +554,30 @@ void loop() {
   // This was another likely culprit in the abnormal colour change stepping
   delay(200); // spend some time here to slow things down
 
-  DateTime now = rtc.now();
-  showTime( &now );
+  if (update_enabled) {
+    update_enabled = false;
 
-  if (alarm_triggered == false) {
-    uint16_t nowtime = (now.hour()*100) + now.minute();
-    if (nowtime == alarm_time) {
-      Serial.println("Sunrise triggered via alarm");
-      alarm_triggered = true;
+    DateTime now = rtc.now();
+    showTime( &now );
+  
+    if (alarm_triggered == false) {
+      uint16_t nowtime = (now.hour()*100) + now.minute();
+      if (nowtime == alarm_time) {
+        Serial.println("Sunrise triggered via alarm");
+        alarm_triggered = true;
+      }
+      else if (digitalRead(BUTTON1) == 0) {
+        Serial.println("Sunrise triggered via button");
+        alarm_triggered = true;
+      }
     }
-    else if (digitalRead(BUTTON1) == 0) {
-      Serial.println("Sunrise triggered via button");
-      alarm_triggered = true;
+    if (alarm_triggered == true) {
+      simulate_sunrise( now.unixtime() );
+      for (int i=0; i < NEO_NUMPIX; i++) {
+        pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
+      }
+      pixels.show();
     }
-  }
-  if (alarm_triggered == true) {
-    simulate_sunrise( now.unixtime() );
-    for (int i=0; i < NEO_NUMPIX; i++) {
-      pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
-    }
-    pixels.show();
   }
 
   sCmd.readSerial();
