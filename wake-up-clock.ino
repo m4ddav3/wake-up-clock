@@ -1,6 +1,6 @@
 /*
  * Notes
- * 
+ *
  * - Maybe use the 1hz output from the clock to trigger display
  *   updates and sunrise changes
  * - Might need to change button1 to another pin (so we can use
@@ -15,7 +15,7 @@
 #define NEO_PIN 6
 #define NEO_NUMPIX 8
 
-// 0 = pin 2, 1 = pin 3
+// 0 = pin D2, 1 = pin D3
 #define RTC_INTERRUPT 1
 
 #include <LiquidCrystal_I2C.h>
@@ -85,7 +85,6 @@ const char bigDigitsBottom[11][digitWidth] = {
 };
 
 char buffer[12];
-byte mode;
 boolean alarm_triggered = false;
 
 struct Color { // RGB color structure
@@ -220,8 +219,6 @@ void setup() {
   rtc.begin();
   if (! rtc.isrunning()) {
     lcd.print("RTC is NOT running!");
-    // following line sets the RTC to the date & time this sketch was compiled
-//    rtc.adjust(DateTime(__DATE__, __TIME__));
   }
   else {
     lcd.print("RTC is running");
@@ -238,9 +235,6 @@ void setup() {
   // Set up the button pin
   pinMode( TEST_BUTTON, INPUT );
 
-  // Initialise variables for reset condition
-  mode = 0x00;
-
   // Initialise start condition for sunrise
   hslcolor.h = 0;
   hslcolor.s = 255;
@@ -254,9 +248,6 @@ void setup() {
   alarm_time = (alarm.hour()*100)+alarm.minute();
 
   pixels.begin();
-  for (int i=0;i<NEO_NUMPIX;i++) {
-    pixels.setPixelColor(i, pixels.Color(127,127,0));
-  }
   pixels.show();
 
   lcd.clear();
@@ -281,6 +272,7 @@ struct Color hslToRgb(struct HSL *hsl) {
 
     return rgb;
   }
+
   if (hsl->l == 0) {
      rgb.r = 0;
      rgb.g = 0;
@@ -351,12 +343,12 @@ uint8_t last_hour = 0; // Last displayed hour
 
 void showDigit(int digit, int position, int extra_offset) {
   int x = position * (digitWidth + 1) + extra_offset;
-  
+
   lcd.setCursor(x, 0);
   for (int i=0; i<digitWidth; i++) {
     lcd.write( bigDigitsTop[digit][i] );
   }
-  
+
   lcd.setCursor(x, 1);
   for (int i=0; i<digitWidth; i++) {
     lcd.write( bigDigitsBottom[digit][i] );
@@ -508,48 +500,13 @@ void pad(uint8_t value) {
 
 void loop() {
 
-   /*
-    * a trimmer resistor voltage divider can be connected
-    * to the analog input so the color can be set up here.
-    * please note, that maximal value for hue is 252, not 255.
-    * larger values than 252 will produce RGB(0,0,0) output
-    */
-
-#ifdef DEBUG
-  /*
-   * Debug output on the serial console
-  */
-  Serial.print("DEBUG: H: ");
-  pad(hslcolor.h);
-  Serial.print(hslcolor.h, DEC);
-  Serial.print(" S: ");
-  pad(hslcolor.s);
-  Serial.print(hslcolor.s, DEC);
-  Serial.print(" L: ");
-  pad(hslcolor.l);
-  Serial.print(hslcolor.l, DEC);
-
-  Serial.print("\t R: ");
-  pad(color.r);
-  Serial.print(color.r, DEC);
-  Serial.print(" G: ");
-  pad(color.g);
-  Serial.print(color.g, DEC);
-  Serial.print(" B: ");
-  pad(color.b);
-  Serial.println(color.b, DEC);
-#endif
-
-
   // This was another likely culprit in the abnormal colour change stepping
-  delay(200); // spend some time here to slow things down
-
   if (update_enabled) {
     update_enabled = false;
 
     DateTime now = rtc.now();
     showTime( &now );
-  
+
     if (alarm_triggered == false) {
       uint16_t nowtime = (now.hour()*100) + now.minute();
       if (nowtime == alarm_time) {
@@ -563,6 +520,39 @@ void loop() {
     }
     if (alarm_triggered == true) {
       simulate_sunrise( now.unixtime() );
+
+    /*
+     * a trimmer resistor voltage divider can be connected
+     * to the analog input so the color can be set up here.
+     * please note, that maximal value for hue is 252, not 255.
+     * larger values than 252 will produce RGB(0,0,0) output
+     */
+
+#ifdef DEBUG
+      /*
+       * Debug output on the serial console
+      */
+      Serial.print("DEBUG: H: ");
+      pad(hslcolor.h);
+      Serial.print(hslcolor.h, DEC);
+      Serial.print(" S: ");
+      pad(hslcolor.s);
+      Serial.print(hslcolor.s, DEC);
+      Serial.print(" L: ");
+      pad(hslcolor.l);
+      Serial.print(hslcolor.l, DEC);
+
+      Serial.print("\t R: ");
+      pad(color.r);
+      Serial.print(color.r, DEC);
+      Serial.print(" G: ");
+      pad(color.g);
+      Serial.print(color.g, DEC);
+      Serial.print(" B: ");
+      pad(color.b);
+      Serial.println(color.b, DEC);
+#endif
+
       for (int i=0; i < NEO_NUMPIX; i++) {
         pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
       }
