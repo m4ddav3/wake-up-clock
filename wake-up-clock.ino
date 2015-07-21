@@ -11,7 +11,7 @@
 
 #define TOP 252
 
-#define BUTTON1 2
+#define TEST_BUTTON 2
 #define NEO_PIN 6
 #define NEO_NUMPIX 8
 
@@ -233,7 +233,7 @@ void setup() {
   delay(200);
 
   // Set up the button pin
-  pinMode( BUTTON1, INPUT );
+  pinMode( TEST_BUTTON, INPUT );
 
   // Initialise start condition for sunrise
   hslcolor.h = 0;
@@ -258,7 +258,7 @@ void setup() {
   rtc.writeSqwPinMode(SquareWave1HZ);
 }
 
-// A copy of color will be taken at the start of each PWM phase
+// A copy of color will be taken at the start of each sunrise update
 static Color current_color = color;
 
 struct Color hslToRgb(struct HSL *hsl) {
@@ -513,7 +513,7 @@ void loop() {
         Serial.println("Sunrise triggered via alarm");
         alarm_triggered = true;
       }
-      else if (digitalRead(BUTTON1) == 0) {
+      else if (digitalRead(TEST_BUTTON) == 0) {
         Serial.println("Sunrise triggered via button");
         alarm_triggered = true;
       }
@@ -565,7 +565,7 @@ void loop() {
 
 /*
   hue = 4
-  luminance ..+15
+  luminance 0..+15
   hue + 1
   until luminance = 150
   hue +1 to 42
