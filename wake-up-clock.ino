@@ -11,11 +11,12 @@
 
 #define TOP 252
 
-#define BUTTON1 2
+#define TEST_BUTTON 2
 #define NEO_PIN 6
 #define NEO_NUMPIX 8
 
-#define RTC_SQR_INTERRUPT 1
+// 0 = pin 2, 1 = pin 3
+#define RTC_INTERRUPT 1
 
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
@@ -39,7 +40,7 @@ SerialCommand sCmd;
 
 boolean update_enabled = false;
 
-void isr_rtc_pulse() {
+void isr_rtc_interrupt() {
   update_enabled = true;
 }
 
@@ -235,7 +236,7 @@ void setup() {
   delay(200);
 
   // Set up the button pin
-  pinMode( BUTTON1, INPUT );
+  pinMode( TEST_BUTTON, INPUT );
 
   // Initialise variables for reset condition
   mode = 0x00;
@@ -260,24 +261,13 @@ void setup() {
 
   lcd.clear();
 
-  attachInterrupt(RTC_SQR_INTERRUPT, isr_rtc_pulse, RISING);
+  attachInterrupt(RTC_INTERRUPT, isr_rtc_interrupt, RISING);
 
   // Start the 1 second pulse
   rtc.writeSqwPinMode(SquareWave1HZ);
 }
 
-/* -----------------------------------------------------
- * Timer1 overflow interrupt
- * F_CPU 9.600.000 Hz
- * -> prescaler 0, overrun 256 -> 37.500 Hz
- * -> 256 steps -> 146 Hz
- *
- * Set global r, g and b to control the color.
- * Range is for rgb is 0-255 (dark to full power)
- */
-static uint8_t count = 0;
-
-// A copy of color will be taken at the start of each PWM phase
+// A copy of color will be taken at the start of each sunrise update
 static Color current_color = color;
 
 struct Color hslToRgb(struct HSL *hsl) {
@@ -566,7 +556,7 @@ void loop() {
         Serial.println("Sunrise triggered via alarm");
         alarm_triggered = true;
       }
-      else if (digitalRead(BUTTON1) == 0) {
+      else if (digitalRead(TEST_BUTTON) == 0) {
         Serial.println("Sunrise triggered via button");
         alarm_triggered = true;
       }
@@ -585,7 +575,7 @@ void loop() {
 
 /*
   hue = 4
-  luminance ..+15
+  luminance 0..+15
   hue + 1
   until luminance = 150
   hue +1 to 42
