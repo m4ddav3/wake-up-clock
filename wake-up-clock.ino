@@ -8,6 +8,7 @@
  */
 
 #define DEBUG
+#define LCD_ENABLED
 
 #define TOP 252
 
@@ -31,8 +32,10 @@
 
 RTC_DS1307 rtc;
 
+#ifdef LCD_ENABLED
 #define I2C_ADDR_LCD 0x38
 LiquidCrystal_I2C lcd(I2C_ADDR_LCD);
+#endif
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NEO_NUMPIX, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -44,6 +47,7 @@ void isr_rtc_interrupt() {
   update_enabled = true;
 }
 
+#ifdef LCD_ENABLED
 #define NUM_CUSTOM_GLYPHS 5
 byte glyphs[NUM_CUSTOM_GLYPHS][8] = {
   { B11111, B11111, B00000, B00000, B00000, B00000, B00000, B00000 },
@@ -83,6 +87,7 @@ const char bigDigitsBottom[11][digitWidth] = {
   {1 ,1 ,3 },
   {32,4 ,32}
 };
+#endif
 
 char buffer[12];
 boolean alarm_triggered = false;
@@ -202,7 +207,9 @@ void setup() {
 //#ifdef DEBUG
   Serial.begin(9600); // This speed to communicate with bluetooth module
 //#endif
+  Wire.begin();
 
+#ifdef LCD_ENABLED
   // Set up the LCD
   lcd.begin(16, 2);
 
@@ -213,10 +220,10 @@ void setup() {
     lcd.createChar(i, glyphs[i]);
   }
   lcd.clear();
-
-  Wire.begin();
+#endif
 
   rtc.begin();
+#ifdef LCD_ENABLED
   if (! rtc.isrunning()) {
     lcd.print("RTC is NOT running!");
   }
@@ -227,9 +234,8 @@ void setup() {
     lcd.print(time.hour());
     lcd.print(':');
     lcd.print(time.minute());
-    Serial.println( __DATE__ );
-    Serial.println( __TIME__ );
   }
+#endif
   delay(200);
 
   // Set up the button pin
@@ -250,7 +256,9 @@ void setup() {
   pixels.begin();
   pixels.show();
 
+#ifdef LCD_ENABLED
   lcd.clear();
+#endif
 
   attachInterrupt(RTC_INTERRUPT, isr_rtc_interrupt, RISING);
 
@@ -505,7 +513,9 @@ void loop() {
     update_enabled = false;
 
     DateTime now = rtc.now();
+#ifdef LCD_ENABLED
     showTime( &now );
+#endif
 
     if (alarm_triggered == false) {
       uint16_t nowtime = (now.hour()*100) + now.minute();
