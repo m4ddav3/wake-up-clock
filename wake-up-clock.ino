@@ -104,6 +104,16 @@ struct HSL { // HSL color (hue-saturation-lightness)
   byte l;
 } hslcolor;
 
+struct RgbTween {
+  uint8_t from_r;
+  uint8_t from_g;
+  uint8_t from_b;
+  uint8_t to_r;
+  uint8_t to_g;
+  uint8_t to_b;
+  uint32_t duration;
+  uint8_t  pos;
+} tween;
 
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
