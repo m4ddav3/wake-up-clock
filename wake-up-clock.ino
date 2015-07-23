@@ -26,6 +26,7 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 #include <Adafruit_NeoPixel.h>
+#include "Easing.h"
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
@@ -113,6 +114,7 @@ struct RgbTween {
   uint8_t to_b;
   uint32_t duration;
   uint8_t  pos;
+  boolean complete = true;
 } tween;
 
 DateTime alarm(2000,1,1,6,0,0);
@@ -461,50 +463,73 @@ uint32_t sunrise_last_invoked = 0;
   Phase 3: saturation -1 to 0
 */
 void simulate_sunrise( uint32_t timenow ) {
-  if (timenow - sunrise_last_invoked >= 4) {
+  return if (!tween.complete);
+  
+  tween.complete = 0;
+  tween.pos = 0;
+  
+  switch (phase) {
+    case 0:
+      hslcolor.h = 4;
+      hslcolor.s = 255;
+      hslcolor.l = 0;
+      
+      color = hslToRgb(&hslcolor);
+      
+      tween.to_r = color.r;
+      tween.to_g = color.g;
+      tween.to_b = color.b;
+      
+      tween.duration = 120;
+      
+      break;
+    case 1:
+      hslcolor.h = 15;
+      hslcolor.l = 150;
+      
+      tween.duration = 120;
+      
+      break;
+    case 2:
+      hslcolor.h = 32;
+      
+      tween.duration = 120;
 
-    sunrise_last_invoked = timenow;
+      break;
+    case 3:
+      hslcolor.s = 127;
+      
+      tween.duration = 120;
 
-    switch (phase) {
-      case 0:
-        hslcolor.h = 4;
-        phase++;
-        break;
-      case 1:
-        hslcolor.l++;
-        if (hslcolor.l % 15 == 0) {
-          hslcolor.h++;
-        }
-        if (hslcolor.l == 150)
-          phase++;
-        break;
-      case 2:
-        hslcolor.h++;
-        if (hslcolor.h == 32)
-          phase++;
-        break;
-      case 3:
-        hslcolor.s--;
-        if (hslcolor.s == 127)
-          phase++;
-        break;
-      case 4:
-        hslcolor.l++;
-        if (hslcolor.l == 255)
-          phase++;
-        break;
-      case 5:
-        hslcolor.s--;
-        if (hslcolor.s == 0)
-          phase++;
-        break;
-      case 6:
-        alarm_triggered = false;
-        break;
-    }
+      break;
+    case 4:
+      hslcolor.l = 255;
+      
+      tween.duration = 120;
 
-    color = hslToRgb(&hslcolor);
+      break;
+    case 5:
+      hslcolor.s = 0;
+      
+      tween.duration = 600;
+
+      break;
+    case 6:
+      alarm_triggered = false;
+      break;
   }
+
+  tween.from_r = color.r;
+  tween.from_g = color.g;
+  tween.from_b = color.b;
+
+  color = hslToRgb(&hslcolor);
+  
+  tween.to_r = color.r;
+  tween.to_g = color.g;
+  tween.to_b = color.b;
+  
+  phase++;
 }
 
 void pad(uint8_t value) {
@@ -574,6 +599,9 @@ void loop() {
 #endif
 
       for (int i=0; i < NEO_NUMPIX; i++) {
+        // Get the tween values for r,g and b, and send them out
+        // Could also tween the number of lit lights?
+        
         pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
       }
       pixels.show();
