@@ -12,12 +12,12 @@
 
 #define TOP 252
 
-#define TEST_BUTTON 2
+#define TEST_BUTTON 5
 #define NEO_PIN 6
-#define NEO_NUMPIX 8
+#define NEO_NUMPIX 16
 
 // 0 = pin D2, 1 = pin D3
-#define RTC_INTERRUPT 1
+#define RTC_INTERRUPT 0
 
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
@@ -26,7 +26,7 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 #include <Adafruit_NeoPixel.h>
-#include "Easing.h"
+#include <Easing.h>
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
@@ -248,7 +248,6 @@ void setup() {
     lcd.print(time.minute());
   }
 #endif
-  delay(200);
 
   // Set up the button pin
   pinMode( TEST_BUTTON, INPUT );
@@ -456,14 +455,8 @@ uint32_t sunrise_last_invoked = 0;
  */
 
 
-/*
-  Phase 0: hue = 4
-  Phase 1: hue + 1, luminance ..+15 until luminance = 150
-  Phase 2: hue +1 to 42 (should be yellow)
-  Phase 3: saturation -1 to 0
-*/
 void simulate_sunrise( uint32_t timenow ) {
-  return if (!tween.complete);
+  if (!tween.complete) return;
   
   tween.complete = 0;
   tween.pos = 0;
@@ -480,38 +473,38 @@ void simulate_sunrise( uint32_t timenow ) {
       tween.to_g = color.g;
       tween.to_b = color.b;
       
-      tween.duration = 120;
+      tween.duration = 2;
       
       break;
     case 1:
       hslcolor.h = 15;
       hslcolor.l = 150;
       
-      tween.duration = 120;
+      tween.duration = 240;
       
       break;
     case 2:
       hslcolor.h = 32;
       
-      tween.duration = 120;
+      tween.duration = 180;
 
       break;
     case 3:
       hslcolor.s = 127;
       
-      tween.duration = 120;
+      tween.duration = 240;
 
       break;
     case 4:
       hslcolor.l = 255;
       
-      tween.duration = 120;
+      tween.duration = 240;
 
       break;
     case 5:
       hslcolor.s = 0;
       
-      tween.duration = 600;
+      tween.duration = 720;
 
       break;
     case 6:
@@ -519,15 +512,15 @@ void simulate_sunrise( uint32_t timenow ) {
       break;
   }
 
-  tween.from_r = color.r;
-  tween.from_g = color.g;
-  tween.from_b = color.b;
+  tween.from_r = tween.to_r;
+  tween.from_g = tween.to_g;
+  tween.from_b = tween.to_b;
 
   color = hslToRgb(&hslcolor);
   
-  tween.to_r = color.r;
-  tween.to_g = color.g;
-  tween.to_b = color.b;
+  tween.to_r = color.r - tween.from_r;
+  tween.to_g = color.g - tween.from_g;
+  tween.to_b = color.b - tween.from_b;
   
   phase++;
 }
@@ -598,11 +591,38 @@ void loop() {
       Serial.println(color.b, DEC);
 #endif
 
+      uint8_t tween_r = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration);
+      uint8_t tween_g = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_g, tween.to_g, tween.duration);
+      uint8_t tween_b = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_b, tween.to_b, tween.duration);
+
+      //if (tween.from_r == tween.to_r) tween_r = tween.to_r;
+      //if (tween.from_g == tween.to_g) tween_g = tween.to_g;
+      //if (tween.from_b == tween.to_b) tween_b = tween.to_b;
+
+      Serial.print("Red tween: pos=");
+      Serial.print(tween.pos, DEC);
+      Serial.print(", from_r=");
+      Serial.print(tween.from_r, DEC);
+      Serial.print(", to_r=");
+      Serial.print(tween.to_r);
+      Serial.print(", duration=");
+      Serial.print(tween.duration, DEC);
+      Serial.print(", tween value=");
+      Serial.print(Easing::easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration));
+      Serial.print(", tween_r=");
+      Serial.println(tween_r, DEC);
+      
+
+
+      if (tween.pos == tween.duration) tween.complete = true;
+      
+      tween.pos++;
+
       for (int i=0; i < NEO_NUMPIX; i++) {
         // Get the tween values for r,g and b, and send them out
         // Could also tween the number of lit lights?
-        
-        pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
+
+        pixels.setPixelColor(i, pixels.Color(tween_r, tween_g, tween_b));
       }
       pixels.show();
     }
