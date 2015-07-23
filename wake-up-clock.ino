@@ -12,12 +12,12 @@
 
 #define TOP 252
 
-#define TEST_BUTTON 2
+#define TEST_BUTTON 5
 #define NEO_PIN 6
-#define NEO_NUMPIX 8
+#define NEO_NUMPIX 16
 
 // 0 = pin D2, 1 = pin D3
-#define RTC_INTERRUPT 1
+#define RTC_INTERRUPT 0
 
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
@@ -26,6 +26,7 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 #include <Adafruit_NeoPixel.h>
+#include <Easing.h>
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
@@ -104,6 +105,17 @@ struct HSL { // HSL color (hue-saturation-lightness)
   byte l;
 } hslcolor;
 
+struct RgbTween {
+  uint8_t from_r;
+  uint8_t from_g;
+  uint8_t from_b;
+  uint8_t to_r;
+  uint8_t to_g;
+  uint8_t to_b;
+  uint32_t duration;
+  uint8_t  pos;
+  boolean complete = true;
+} tween;
 
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
@@ -236,7 +248,6 @@ void setup() {
     lcd.print(time.minute());
   }
 #endif
-  delay(200);
 
   // Set up the button pin
   pinMode( TEST_BUTTON, INPUT );
@@ -444,57 +455,74 @@ uint32_t sunrise_last_invoked = 0;
  */
 
 
-/*
-  Phase 0: hue = 4
-  Phase 1: hue + 1, luminance ..+15 until luminance = 150
-  Phase 2: hue +1 to 42 (should be yellow)
-  Phase 3: saturation -1 to 0
-*/
 void simulate_sunrise( uint32_t timenow ) {
-  if (timenow - sunrise_last_invoked >= 4) {
+  if (!tween.complete) return;
+  
+  tween.complete = 0;
+  tween.pos = 0;
+  
+  switch (phase) {
+    case 0:
+      hslcolor.h = 4;
+      hslcolor.s = 255;
+      hslcolor.l = 0;
+      
+      color = hslToRgb(&hslcolor);
+      
+      tween.to_r = color.r;
+      tween.to_g = color.g;
+      tween.to_b = color.b;
+      
+      tween.duration = 2;
+      
+      break;
+    case 1:
+      hslcolor.h = 15;
+      hslcolor.l = 150;
+      
+      tween.duration = 240;
+      
+      break;
+    case 2:
+      hslcolor.h = 32;
+      
+      tween.duration = 180;
 
-    sunrise_last_invoked = timenow;
+      break;
+    case 3:
+      hslcolor.s = 127;
+      
+      tween.duration = 240;
 
-    switch (phase) {
-      case 0:
-        hslcolor.h = 4;
-        phase++;
-        break;
-      case 1:
-        hslcolor.l++;
-        if (hslcolor.l % 15 == 0) {
-          hslcolor.h++;
-        }
-        if (hslcolor.l == 150)
-          phase++;
-        break;
-      case 2:
-        hslcolor.h++;
-        if (hslcolor.h == 32)
-          phase++;
-        break;
-      case 3:
-        hslcolor.s--;
-        if (hslcolor.s == 127)
-          phase++;
-        break;
-      case 4:
-        hslcolor.l++;
-        if (hslcolor.l == 255)
-          phase++;
-        break;
-      case 5:
-        hslcolor.s--;
-        if (hslcolor.s == 0)
-          phase++;
-        break;
-      case 6:
-        alarm_triggered = false;
-        break;
-    }
+      break;
+    case 4:
+      hslcolor.l = 255;
+      
+      tween.duration = 240;
 
-    color = hslToRgb(&hslcolor);
+      break;
+    case 5:
+      hslcolor.s = 0;
+      
+      tween.duration = 720;
+
+      break;
+    case 6:
+      alarm_triggered = false;
+      break;
   }
+
+  tween.from_r = tween.to_r;
+  tween.from_g = tween.to_g;
+  tween.from_b = tween.to_b;
+
+  color = hslToRgb(&hslcolor);
+  
+  tween.to_r = color.r - tween.from_r;
+  tween.to_g = color.g - tween.from_g;
+  tween.to_b = color.b - tween.from_b;
+  
+  phase++;
 }
 
 void pad(uint8_t value) {
@@ -563,8 +591,38 @@ void loop() {
       Serial.println(color.b, DEC);
 #endif
 
+      uint8_t tween_r = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration);
+      uint8_t tween_g = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_g, tween.to_g, tween.duration);
+      uint8_t tween_b = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_b, tween.to_b, tween.duration);
+
+      //if (tween.from_r == tween.to_r) tween_r = tween.to_r;
+      //if (tween.from_g == tween.to_g) tween_g = tween.to_g;
+      //if (tween.from_b == tween.to_b) tween_b = tween.to_b;
+
+      Serial.print("Red tween: pos=");
+      Serial.print(tween.pos, DEC);
+      Serial.print(", from_r=");
+      Serial.print(tween.from_r, DEC);
+      Serial.print(", to_r=");
+      Serial.print(tween.to_r);
+      Serial.print(", duration=");
+      Serial.print(tween.duration, DEC);
+      Serial.print(", tween value=");
+      Serial.print(Easing::easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration));
+      Serial.print(", tween_r=");
+      Serial.println(tween_r, DEC);
+      
+
+
+      if (tween.pos == tween.duration) tween.complete = true;
+      
+      tween.pos++;
+
       for (int i=0; i < NEO_NUMPIX; i++) {
-        pixels.setPixelColor(i, pixels.Color(color.r, color.g, color.b));
+        // Get the tween values for r,g and b, and send them out
+        // Could also tween the number of lit lights?
+
+        pixels.setPixelColor(i, pixels.Color(tween_r, tween_g, tween_b));
       }
       pixels.show();
     }
