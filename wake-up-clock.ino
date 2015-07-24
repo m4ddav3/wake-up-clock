@@ -138,24 +138,25 @@ struct RgbTween {
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
 
+void print_time( DateTime *datetime, String label ) {
+      Serial.print(label);
+      Serial.print( ": " );
+      if (datetime->hour() < 10) Serial.print( "0" );
+      Serial.print( datetime->hour() );
+      Serial.print( ":" );
+      if (datetime->minute() < 10) Serial.print( "0" );
+      Serial.println( datetime->minute() );
+}
+
 /*
     This gets set as the default handler, and gets called when
     no other command matches.
 */
-void unrecognized(const char *command) {
+void cmd_unrecognised(const char *command) {
   Serial.println("Unrecognised command. Ensure you have newline enabled");
 }
 
-void printAlarm( DateTime *alarm ) {
-      Serial.print( "Alarm: " );
-      if (alarm->hour() < 10) Serial.print( "0" );
-      Serial.print( alarm->hour() );
-      Serial.print( ":" );
-      if (alarm->minute() < 10) Serial.print( "0" );
-      Serial.println( alarm->minute() );
-}
-
-void processAlarm() {
+void cmd_alarm() {
   char *arg;
   arg = sCmd.next();
 
@@ -163,7 +164,7 @@ void processAlarm() {
 
   if (arg1 != NULL) {
     if (arg1.equalsIgnoreCase("GET")) {
-      printAlarm( &alarm );
+      print_time( &alarm, "Alarm" );
     }
     else if (arg1.equalsIgnoreCase("SET")) {
       String arg2 = String(sCmd.next());
@@ -177,7 +178,7 @@ void processAlarm() {
         DateTime newAlarm( tempAlarm.unixtime() - 1200L );
 
         alarm = newAlarm;
-        printAlarm( &alarm );
+        print_time( &alarm, "Alarm" );
 
         EEPROM_writeAnything(0, alarm);
         alarm_time = (alarm.hour()*100)+alarm.minute();
@@ -185,11 +186,11 @@ void processAlarm() {
     }
   }
   else {
-    printAlarm( &alarm );
+    print_time( &alarm, "Alarm" );
   }
 }
 
-void processTime() {
+void cmd_time() {
   char *arg;
   arg = sCmd.next();
 
@@ -203,7 +204,11 @@ void processTime() {
   uint8_t ss = 0;
 
   if (arg1 != NULL) {
-    if (arg1.equalsIgnoreCase("SET")) {
+    if (arg1.equalsIgnoreCase("GET")) {
+      DateTime now = rtc.now();
+      print_time( &now, "Time" );
+    }
+    else if (arg1.equalsIgnoreCase("SET")) {
       String sDate = String(sCmd.next());
       String sTime = String(sCmd.next());
 
@@ -230,69 +235,6 @@ void processTime() {
         rtc.adjust( newTime );
       }
     }
-}
-
-
-void setup() {
-//#ifdef DEBUG
-  Serial.begin(9600); // This speed to communicate with bluetooth module
-//#endif
-  Wire.begin();
-
-#ifdef LCD_ENABLED
-  // Set up the LCD
-  lcd.begin(16, 2);
-
-  // Set up custom characters
-  for (int i=0;i<NUM_CUSTOM_GLYPHS;i++) {
-    lcd.setCursor(0,1);
-    lcd.write( i+1 );
-    lcd.createChar(i, glyphs[i]);
-  }
-  lcd.clear();
-#endif
-
-  rtc.begin();
-#ifdef LCD_ENABLED
-  if (! rtc.isrunning()) {
-    lcd.print("RTC is NOT running!");
-  }
-  else {
-    lcd.print("RTC is running");
-    lcd.setCursor(0,1);
-    DateTime time = rtc.now();
-    lcd.print(time.hour());
-    lcd.print(':');
-    lcd.print(time.minute());
-  }
-#endif
-
-  // Set up the button pin
-  pinMode( TEST_BUTTON, INPUT );
-
-  // Initialise start condition for sunrise
-  hslcolor.h = 0;
-  hslcolor.s = 255;
-  hslcolor.l = 0;
-
-  sCmd.addCommand("ALARM", processAlarm);
-  sCmd.addCommand("TIME",  processTime );
-  sCmd.setDefaultHandler(unrecognized);
-
-  EEPROM_readAnything(0, alarm);
-  alarm_time = (alarm.hour()*100)+alarm.minute();
-
-  pixels.begin();
-  pixels.show();
-
-#ifdef LCD_ENABLED
-  lcd.clear();
-#endif
-
-  attachInterrupt(RTC_INTERRUPT, isr_rtc_interrupt, RISING);
-
-  // Start the 1 second pulse
-  rtc.writeSqwPinMode(SquareWave1HZ);
 }
 
 // A copy of color will be taken at the start of each sunrise update
@@ -472,8 +414,7 @@ uint32_t sunrise_last_invoked = 0;
  * 7. Decrease saturation to 0
  */
 
-
-void simulate_sunrise( uint32_t timenow ) {
+void update_sunrise_tween( uint32_t timenow ) {
   if (!tween.complete) return;
   
   tween.complete = 0;
@@ -552,6 +493,68 @@ void pad(uint8_t value) {
   }
 }
 
+void setup() {
+//#ifdef DEBUG
+  Serial.begin(9600); // This speed to communicate with bluetooth module
+//#endif
+  Wire.begin();
+
+#ifdef LCD_ENABLED
+  // Set up the LCD
+  lcd.begin(16, 2);
+
+  // Set up custom characters
+  for (int i=0;i<NUM_CUSTOM_GLYPHS;i++) {
+    lcd.setCursor(0,1);
+    lcd.write( i+1 );
+    lcd.createChar(i, glyphs[i]);
+  }
+  lcd.clear();
+#endif
+
+  rtc.begin();
+#ifdef LCD_ENABLED
+  if (! rtc.isrunning()) {
+    lcd.print("RTC is NOT running!");
+  }
+  else {
+    lcd.print("RTC is running");
+    lcd.setCursor(0,1);
+    DateTime time = rtc.now();
+    lcd.print(time.hour());
+    lcd.print(':');
+    lcd.print(time.minute());
+  }
+#endif
+
+  // Set up the button pin
+  pinMode( TEST_BUTTON, INPUT );
+
+  // Initialise start condition for sunrise
+  hslcolor.h = 0;
+  hslcolor.s = 255;
+  hslcolor.l = 0;
+
+  sCmd.addCommand("ALARM", cmd_alarm);
+  sCmd.addCommand("TIME",  cmd_time );
+  sCmd.setDefaultHandler(cmd_unrecognised);
+
+  EEPROM_readAnything(0, alarm);
+  alarm_time = (alarm.hour()*100)+alarm.minute();
+
+  pixels.begin();
+  pixels.show();
+
+#ifdef LCD_ENABLED
+  lcd.clear();
+#endif
+
+  attachInterrupt(RTC_INTERRUPT, isr_rtc_interrupt, RISING);
+
+  // Start the 1 second pulse
+  rtc.writeSqwPinMode(SquareWave1HZ);
+}
+
 void loop() {
 
   // This was another likely culprit in the abnormal colour change stepping
@@ -575,7 +578,7 @@ void loop() {
       }
     }
     if (alarm_triggered == true) {
-      simulate_sunrise( now.unixtime() );
+      update_sunrise_tween( now.unixtime() );
 
     /*
      * a trimmer resistor voltage divider can be connected
