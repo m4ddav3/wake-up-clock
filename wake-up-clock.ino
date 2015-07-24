@@ -1,10 +1,25 @@
 /*
  * Notes
  *
- * - Maybe use the 1hz output from the clock to trigger display
- *   updates and sunrise changes
- * - Might need to change button1 to another pin (so we can use
- *   the 1hz output from the clock as an external interrupt)
+ * Need to check tweening values
+ * Tweening could be queued up/re-written...
+ * Helper to set the correct tween params, it's actually:
+ *   easeFFF( pos, from, to - from, duration )
+ * where:
+ *   pos = current frame i.e. the millisecond/second/animation frame/loop iteration/etc
+ *   from = starting value
+ *   to - from = the amount to change by to get to the final value
+ *   duration = how many steps the tween takes in total. It's nice because if you're
+ *              using an animation that is time dependant, you can advance the position
+ *              along to the curve to wherever you're supposed to be
+ *              i.e 0 -> 1 -> lag -> 5 -> ..
+ *
+ * Nice to have functionality:
+ *  - 'go to sleep' sunset lighting
+ *  - moon lighting?
+ *  - User selectable colour light
+ *    - Could tween to the next colour
+ * 
  */
 
 #define DEBUG
