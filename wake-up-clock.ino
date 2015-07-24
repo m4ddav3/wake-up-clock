@@ -20,6 +20,9 @@
  *  - User selectable colour light
  *    - Could tween to the next colour
  * 
+ * Future
+ * - Extra satellite units could recieve radio input to fade lights. Could mean placing
+ *   multiple units around a room and having them all sunrise in unison
  */
 
 #define DEBUG
