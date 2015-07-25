@@ -32,7 +32,7 @@
 
 #define TEST_BUTTON 5
 #define NEO_PIN 6
-#define NEO_NUMPIX 16
+#define NEO_NUMPIX 8
 
 // 0 = pin D2, 1 = pin D3
 #define RTC_INTERRUPT 0
@@ -44,7 +44,7 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 #include <Adafruit_NeoPixel.h>
-#include <Easing.h>
+//#include <Easing.h>
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
@@ -137,6 +137,12 @@ struct RgbTween {
 
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
+
+uint8_t easeInOutCubic (float t, float b, float c, float d) {
+  if (c == 0) return (uint8_t) b;
+  if ((t/=d/2) < 1) return c/2*t*t*t + b;
+  return (uint8_t) c/2*((t-=2)*t*t + 2) + b;
+}
 
 void print_time( DateTime *datetime, String label ) {
       Serial.print(label);
@@ -425,12 +431,20 @@ void update_sunrise_tween( uint32_t timenow ) {
       hslcolor.h = 4;
       hslcolor.s = 255;
       hslcolor.l = 0;
-      
+
       color = hslToRgb(&hslcolor);
+
+      hslcolor.l = 1;
       
+      /*
       tween.to_r = color.r;
       tween.to_g = color.g;
       tween.to_b = color.b;
+      */
+
+      tween.to_r = 0;
+      tween.to_g = 0;
+      tween.to_b = 0;
       
       tween.duration = 2;
       
@@ -471,9 +485,9 @@ void update_sunrise_tween( uint32_t timenow ) {
       break;
   }
 
-  tween.from_r = tween.to_r;
-  tween.from_g = tween.to_g;
-  tween.from_b = tween.to_b;
+  tween.from_r = color.r;
+  tween.from_g = color.g;
+  tween.from_b = color.b;
 
   color = hslToRgb(&hslcolor);
   
@@ -612,9 +626,9 @@ void loop() {
       Serial.println(color.b, DEC);
 #endif
 
-      uint8_t tween_r = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration);
-      uint8_t tween_g = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_g, tween.to_g, tween.duration);
-      uint8_t tween_b = (uint8_t) Easing::easeInOutCubic(tween.pos, tween.from_b, tween.to_b, tween.duration);
+      uint8_t tween_r = easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration);
+      uint8_t tween_g = easeInOutCubic(tween.pos, tween.from_g, tween.to_g, tween.duration);
+      uint8_t tween_b = easeInOutCubic(tween.pos, tween.from_b, tween.to_b, tween.duration);
 
       //if (tween.from_r == tween.to_r) tween_r = tween.to_r;
       //if (tween.from_g == tween.to_g) tween_g = tween.to_g;
@@ -629,7 +643,7 @@ void loop() {
       Serial.print(", duration=");
       Serial.print(tween.duration, DEC);
       Serial.print(", tween value=");
-      Serial.print(Easing::easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration));
+      Serial.print(easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration));
       Serial.print(", tween_r=");
       Serial.println(tween_r, DEC);
       
