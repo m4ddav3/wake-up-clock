@@ -243,6 +243,19 @@ void cmd_time() {
     }
 }
 
+void cmd_color() {
+  char *arg;
+  arg = sCmd.next();
+
+  String arg1 = String(arg);
+
+  if (arg1 != NULL) {
+    if (arg1.equalsIgnoreCase("GET")) {
+      // return the current colour values
+    }
+  }
+}
+
 // A copy of color will be taken at the start of each sunrise update
 static Color current_color = color;
 
