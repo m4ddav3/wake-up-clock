@@ -144,6 +144,15 @@ uint8_t easeInOutCubic (float t, float b, float c, float d) {
   return (uint8_t) c/2*((t-=2)*t*t + 2) + b;
 }
 
+void pad(uint8_t value) {
+  if (value < 10) {
+    Serial.print("  ");
+  }
+  else if (value < 100) {
+    Serial.print(" ");
+  }
+}
+
 void print_time( DateTime *datetime, String label ) {
       Serial.print(label);
       Serial.print( ": " );
@@ -252,6 +261,44 @@ void cmd_color() {
   if (arg1 != NULL) {
     if (arg1.equalsIgnoreCase("GET")) {
       // return the current colour values
+      Serial.print("RGB ");
+      Serial.print(color.r);
+      Serial.print(",");
+      Serial.print(color.g);
+      Serial.print(",");
+      Serial.println(color.b);
+    }
+    else if (arg1.equalsIgnoreCase("RGB")) {
+      // set the RGB values directly
+      arg = sCmd.next();
+      arg1 = String(arg);
+
+      uint8_t comma1 = arg1.indexOf(",");
+      uint8_t comma2 = arg1.indexOf(",", comma2);
+
+      Color newcolor;
+
+      newcolor.r = arg1.substring(0, comma1).toInt();
+      newcolor.g = arg1.substring(comma1, comma2).toInt();
+      newcolor.b = arg1.substring(comma2).toInt();
+
+      color = newcolor;
+    }
+    else if (arg1.equalsIgnoreCase("HSL")) {
+      // set the HSL values directly
+      arg = sCmd.next();
+      arg1 = String(arg);
+
+      uint8_t comma1 = arg1.indexOf(",");
+      uint8_t comma2 = arg1.indexOf(",", comma2);
+
+      HSL newhsl;
+
+      newhsl.h = arg1.substring(0, comma1).toInt();
+      newhsl.s = arg1.substring(comma1, comma2).toInt();
+      newhsl.l = arg1.substring(comma2).toInt();
+
+      color = hslToRgb(&newhsl);
     }
   }
 }
@@ -509,15 +556,6 @@ void update_sunrise_tween( uint32_t timenow ) {
   tween.to_b = color.b - tween.from_b;
   
   phase++;
-}
-
-void pad(uint8_t value) {
-  if (value < 10) {
-    Serial.print("  ");
-  }
-  else if (value < 100) {
-    Serial.print(" ");
-  }
 }
 
 void setup() {
