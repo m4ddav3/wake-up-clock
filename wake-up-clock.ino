@@ -178,6 +178,7 @@ void print_time( DateTime *datetime, String label ) {
 */
 void cmd_unrecognised(const char *command) {
   Serial.println("Unrecognised command. Ensure you have newline enabled");
+  sCmd.clearBuffer();
 }
 
 void cmd_alarm() {
@@ -212,6 +213,8 @@ void cmd_alarm() {
   else {
     print_time( &alarm, "Alarm" );
   }
+  
+  sCmd.clearBuffer();
 }
 
 void cmd_time() {
@@ -256,9 +259,11 @@ void cmd_time() {
 //      Serial.println ( newAlarm.unixtime() );
 //      Serial.println ( (uint8_t) newAlarm.unixtime() & 0xFF );
 
-        rtc.adjust( newTime );
-      }
+      rtc.adjust( newTime );
     }
+  }
+
+  sCmd.clearBuffer();
 }
 
 void cmd_colour() {
@@ -310,6 +315,8 @@ void cmd_colour() {
       colour = hslToRgb(&newhsl);
     }
   }
+
+  sCmd.clearBuffer();
 }
 
 struct Color hslToRgb(struct HSL *hsl) {
