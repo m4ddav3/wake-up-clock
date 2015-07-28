@@ -133,10 +133,19 @@ struct RgbTween {
   uint32_t duration;
   uint8_t  pos;
   boolean complete = true;
-} tween;
+};
+
+#define MAX_TWEEN_QUEUE_SIZE 2
+struct TweenQueue {
+  RgbTween tweens[MAX_TWEEN_QUEUE_SIZE];
+  uint8_t length = 0;
+} tween_queue;
 
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
+
+// A copy of color will be taken at the start of each sunrise update
+static Color current_color = color;
 
 uint8_t easeInOutCubic (float t, float b, float c, float d) {
   if (c == 0) return (uint8_t) b;
@@ -302,9 +311,6 @@ void cmd_color() {
     }
   }
 }
-
-// A copy of color will be taken at the start of each sunrise update
-static Color current_color = color;
 
 struct Color hslToRgb(struct HSL *hsl) {
 
