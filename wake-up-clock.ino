@@ -111,17 +111,17 @@ const char bigDigitsBottom[11][digitWidth] = {
 char buffer[12];
 boolean alarm_triggered = false;
 
-struct Color { // RGB color structure
+struct Colour { // RGB colour structure
   byte r;
   byte g;
   byte b;
-} color;
+} colour;
 
-struct HSL { // HSL color (hue-saturation-lightness)
+struct HSL { // HSL colour (hue-saturation-lightness)
   byte h;
   byte s;
   byte l;
-} hslcolor;
+} hslcolour;
 
 struct RgbTween {
   uint8_t from_r;
@@ -252,7 +252,7 @@ void cmd_time() {
     }
 }
 
-void cmd_color() {
+void cmd_colour() {
   char *arg;
   arg = sCmd.next();
 
@@ -262,11 +262,11 @@ void cmd_color() {
     if (arg1.equalsIgnoreCase("GET")) {
       // return the current colour values
       Serial.print("RGB ");
-      Serial.print(color.r);
+      Serial.print(colour.r);
       Serial.print(",");
-      Serial.print(color.g);
+      Serial.print(colour.g);
       Serial.print(",");
-      Serial.println(color.b);
+      Serial.println(colour.b);
     }
     else if (arg1.equalsIgnoreCase("RGB")) {
       // set the RGB values directly
@@ -276,13 +276,13 @@ void cmd_color() {
       uint8_t comma1 = arg1.indexOf(",");
       uint8_t comma2 = arg1.indexOf(",", comma2);
 
-      Color newcolor;
+      Colour newcolour;
 
-      newcolor.r = arg1.substring(0, comma1).toInt();
-      newcolor.g = arg1.substring(comma1, comma2).toInt();
-      newcolor.b = arg1.substring(comma2).toInt();
+      newcolour.r = arg1.substring(0, comma1).toInt();
+      newcolour.g = arg1.substring(comma1, comma2).toInt();
+      newcolour.b = arg1.substring(comma2).toInt();
 
-      color = newcolor;
+      colour = newcolour;
     }
     else if (arg1.equalsIgnoreCase("HSL")) {
       // set the HSL values directly
@@ -298,17 +298,17 @@ void cmd_color() {
       newhsl.s = arg1.substring(comma1, comma2).toInt();
       newhsl.l = arg1.substring(comma2).toInt();
 
-      color = hslToRgb(&newhsl);
+      colour = hslToRgb(&newhsl);
     }
   }
 }
 
-// A copy of color will be taken at the start of each sunrise update
-static Color current_color = color;
+// A copy of colour will be taken at the start of each sunrise update
+static Colour current_colour = colour;
 
-struct Color hslToRgb(struct HSL *hsl) {
+struct Colour hslToRgb(struct HSL *hsl) {
 
-  Color rgb; // this will be the output
+  Colour rgb; // this will be the output
 
   if (hsl->s == 0) {
     rgb.r = hsl->l;
@@ -488,18 +488,18 @@ void update_sunrise_tween( uint32_t timenow ) {
   
   switch (phase) {
     case 0:
-      hslcolor.h = 4;
-      hslcolor.s = 255;
-      hslcolor.l = 0;
+      hslcolour.h = 4;
+      hslcolour.s = 255;
+      hslcolour.l = 0;
 
-      color = hslToRgb(&hslcolor);
+      colour = hslToRgb(&hslcolour);
 
-      hslcolor.l = 1;
+      hslcolour.l = 1;
       
       /*
-      tween.to_r = color.r;
-      tween.to_g = color.g;
-      tween.to_b = color.b;
+      tween.to_r = colour.r;
+      tween.to_g = colour.g;
+      tween.to_b = colour.b;
       */
 
       tween.to_r = 0;
@@ -510,32 +510,32 @@ void update_sunrise_tween( uint32_t timenow ) {
       
       break;
     case 1:
-      hslcolor.h = 15;
-      hslcolor.l = 150;
+      hslcolour.h = 15;
+      hslcolour.l = 150;
       
       tween.duration = 240;
       
       break;
     case 2:
-      hslcolor.h = 32;
+      hslcolour.h = 32;
       
       tween.duration = 180;
 
       break;
     case 3:
-      hslcolor.s = 127;
+      hslcolour.s = 127;
       
       tween.duration = 240;
 
       break;
     case 4:
-      hslcolor.l = 255;
+      hslcolour.l = 255;
       
       tween.duration = 240;
 
       break;
     case 5:
-      hslcolor.s = 0;
+      hslcolour.s = 0;
       
       tween.duration = 720;
 
@@ -545,15 +545,15 @@ void update_sunrise_tween( uint32_t timenow ) {
       break;
   }
 
-  tween.from_r = color.r;
-  tween.from_g = color.g;
-  tween.from_b = color.b;
+  tween.from_r = colour.r;
+  tween.from_g = colour.g;
+  tween.from_b = colour.b;
 
-  color = hslToRgb(&hslcolor);
+  colour = hslToRgb(&hslcolour);
   
-  tween.to_r = color.r - tween.from_r;
-  tween.to_g = color.g - tween.from_g;
-  tween.to_b = color.b - tween.from_b;
+  tween.to_r = colour.r - tween.from_r;
+  tween.to_g = colour.g - tween.from_g;
+  tween.to_b = colour.b - tween.from_b;
   
   phase++;
 }
@@ -596,13 +596,13 @@ void setup() {
   pinMode( TEST_BUTTON, INPUT );
 
   // Initialise start condition for sunrise
-  hslcolor.h = 0;
-  hslcolor.s = 255;
-  hslcolor.l = 0;
+  hslcolour.h = 0;
+  hslcolour.s = 255;
+  hslcolour.l = 0;
 
   sCmd.addCommand("ALARM", cmd_alarm);
   sCmd.addCommand("TIME",  cmd_time );
-  sCmd.addCommand("COLOR", cmd_color);
+  sCmd.addCommand("COLOR", cmd_colour);
   sCmd.setDefaultHandler(cmd_unrecognised);
 
   EEPROM_readAnything(0, alarm);
@@ -648,7 +648,7 @@ void loop() {
 
     /*
      * a trimmer resistor voltage divider can be connected
-     * to the analog input so the color can be set up here.
+     * to the analog input so the colour can be set up here.
      * please note, that maximal value for hue is 252, not 255.
      * larger values than 252 will produce RGB(0,0,0) output
      */
@@ -658,24 +658,24 @@ void loop() {
        * Debug output on the serial console
       */
       Serial.print("DEBUG: H: ");
-      pad(hslcolor.h);
-      Serial.print(hslcolor.h, DEC);
+      pad(hslcolour.h);
+      Serial.print(hslcolour.h, DEC);
       Serial.print(" S: ");
-      pad(hslcolor.s);
-      Serial.print(hslcolor.s, DEC);
+      pad(hslcolour.s);
+      Serial.print(hslcolour.s, DEC);
       Serial.print(" L: ");
-      pad(hslcolor.l);
-      Serial.print(hslcolor.l, DEC);
+      pad(hslcolour.l);
+      Serial.print(hslcolour.l, DEC);
 
       Serial.print("\t R: ");
-      pad(color.r);
-      Serial.print(color.r, DEC);
+      pad(colour.r);
+      Serial.print(colour.r, DEC);
       Serial.print(" G: ");
-      pad(color.g);
-      Serial.print(color.g, DEC);
+      pad(colour.g);
+      Serial.print(colour.g, DEC);
       Serial.print(" B: ");
-      pad(color.b);
-      Serial.println(color.b, DEC);
+      pad(colour.b);
+      Serial.println(colour.b, DEC);
 #endif
 
       uint8_t tween_r = easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration);
@@ -709,7 +709,7 @@ void loop() {
         // Get the tween values for r,g and b, and send them out
         // Could also tween the number of lit lights?
 
-        pixels.setPixelColor(i, pixels.Color(tween_r, tween_g, tween_b));
+        pixels.setPixelColour(i, pixels.Colour(tween_r, tween_g, tween_b));
       }
       pixels.show();
     }
