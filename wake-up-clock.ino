@@ -133,10 +133,19 @@ struct RgbTween {
   uint32_t duration;
   uint8_t  pos;
   boolean complete = true;
-} tween;
+};
+
+#define MAX_TWEEN_QUEUE_SIZE 2
+struct TweenQueue {
+  RgbTween tweens[MAX_TWEEN_QUEUE_SIZE];
+  uint8_t length = 0;
+} tween_queue;
 
 DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
+
+// A copy of color will be taken at the start of each sunrise update
+static Colour current_colour = colour;
 
 uint8_t easeInOutCubic (float t, float b, float c, float d) {
   if (c == 0) return (uint8_t) b;
@@ -303,10 +312,7 @@ void cmd_colour() {
   }
 }
 
-// A copy of colour will be taken at the start of each sunrise update
-static Colour current_colour = colour;
-
-struct Colour hslToRgb(struct HSL *hsl) {
+struct Color hslToRgb(struct HSL *hsl) {
 
   Colour rgb; // this will be the output
 
@@ -600,9 +606,9 @@ void setup() {
   hslcolour.s = 255;
   hslcolour.l = 0;
 
-  sCmd.addCommand("ALARM", cmd_alarm);
-  sCmd.addCommand("TIME",  cmd_time );
-  sCmd.addCommand("COLOR", cmd_colour);
+  sCmd.addCommand("ALARM",  cmd_alarm );
+  sCmd.addCommand("TIME",   cmd_time  );
+  sCmd.addCommand("COLOUR", cmd_colour);
   sCmd.setDefaultHandler(cmd_unrecognised);
 
   EEPROM_readAnything(0, alarm);
