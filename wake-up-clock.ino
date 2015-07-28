@@ -602,6 +602,7 @@ void setup() {
 
   sCmd.addCommand("ALARM", cmd_alarm);
   sCmd.addCommand("TIME",  cmd_time );
+  sCmd.addCommand("COLOR", cmd_color);
   sCmd.setDefaultHandler(cmd_unrecognised);
 
   EEPROM_readAnything(0, alarm);
