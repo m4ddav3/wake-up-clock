@@ -145,7 +145,7 @@ DateTime alarm(2000,1,1,6,0,0);
 uint16_t alarm_time = 0;
 
 // A copy of color will be taken at the start of each sunrise update
-static Color current_color = color;
+static Colour current_colour = colour;
 
 uint8_t easeInOutCubic (float t, float b, float c, float d) {
   if (c == 0) return (uint8_t) b;
