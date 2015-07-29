@@ -37,6 +37,7 @@
 // 0 = pin D2, 1 = pin D3
 #define RTC_INTERRUPT 0
 
+#include <math.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <RTClib.h>
@@ -147,10 +148,14 @@ uint16_t alarm_time = 0;
 // A copy of color will be taken at the start of each sunrise update
 static Colour current_colour = colour;
 
-uint8_t easeInOutCubic (float t, float b, float c, float d) {
-  if (c == 0) return (uint8_t) b;
-  if ((t/=d/2) < 1) return c/2*t*t*t + b;
-  return (uint8_t) c/2*((t-=2)*t*t + 2) + b;
+/*
+ * Modified version of the function from the Easing library
+ * Shortcuts if there is no distance to ease toward
+ */
+float easeInOutCubic (float t, float b, float c, float d) {
+  if (c == 0) return b;
+  else if ((t/=d/2) < 1) return c/2*t*t*t + b;
+  return c/2*((t-=2)*t*t + 2) + b;
 }
 
 void pad(uint8_t value) {
@@ -691,9 +696,9 @@ void loop() {
       Serial.println(colour.b, DEC);
 #endif
 
-      uint8_t tween_r = easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration);
-      uint8_t tween_g = easeInOutCubic(tween.pos, tween.from_g, tween.to_g, tween.duration);
-      uint8_t tween_b = easeInOutCubic(tween.pos, tween.from_b, tween.to_b, tween.duration);
+      uint8_t tween_r = round(easeInOutCubic(tween.pos, tween.from_r, tween.to_r, tween.duration));
+      uint8_t tween_g = round(easeInOutCubic(tween.pos, tween.from_g, tween.to_g, tween.duration));
+      uint8_t tween_b = round(easeInOutCubic(tween.pos, tween.from_b, tween.to_b, tween.duration));
 
       //if (tween.from_r == tween.to_r) tween_r = tween.to_r;
       //if (tween.from_g == tween.to_g) tween_g = tween.to_g;
