@@ -134,7 +134,7 @@ struct RgbTween {
   uint32_t duration;
   uint8_t  pos;
   boolean complete = true;
-};
+} tween;
 
 #define MAX_TWEEN_QUEUE_SIZE 2
 struct TweenQueue {
@@ -324,7 +324,7 @@ void cmd_colour() {
   sCmd.clearBuffer();
 }
 
-struct Color hslToRgb(struct HSL *hsl) {
+struct Colour hslToRgb(struct HSL *hsl) {
 
   Colour rgb; // this will be the output
 
@@ -567,7 +567,7 @@ void update_sunrise_tween( uint32_t timenow ) {
   tween.from_g = colour.g;
   tween.from_b = colour.b;
 
-  colour = hslToRgb(&hslcolour);
+  Colour colour = hslToRgb(&hslcolour);
   
   tween.to_r = colour.r - tween.from_r;
   tween.to_g = colour.g - tween.from_g;
@@ -722,12 +722,13 @@ void loop() {
       if (tween.pos == tween.duration) tween.complete = true;
       
       tween.pos++;
+      uint32_t pixel_colour = pixels.Color(tween_r, tween_g, tween_b);
 
       for (int i=0; i < NEO_NUMPIX; i++) {
         // Get the tween values for r,g and b, and send them out
         // Could also tween the number of lit lights?
 
-        pixels.setPixelColour(i, pixels.Colour(tween_r, tween_g, tween_b));
+        pixels.setPixelColor(i, pixel_colour);
       }
       pixels.show();
     }
