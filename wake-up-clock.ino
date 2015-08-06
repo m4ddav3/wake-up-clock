@@ -639,6 +639,18 @@ void setup() {
   rtc.writeSqwPinMode(SquareWave1HZ);
 }
 
+uint32_t last_pixel_colour = 0;
+
+void update_pixels(uint32_t pixel_colour) {
+    for (int i=0; i < NEO_NUMPIX; i++) {
+    // Get the tween values for r,g and b, and send them out
+    // Could also tween the number of lit lights?
+  
+    pixels.setPixelColor(i, pixel_colour);
+  }
+  pixels.show();
+}
+
 void loop() {
 
   // This was another likely culprit in the abnormal colour change stepping
@@ -724,13 +736,10 @@ void loop() {
       tween.pos++;
       uint32_t pixel_colour = pixels.Color(tween_r, tween_g, tween_b);
 
-      for (int i=0; i < NEO_NUMPIX; i++) {
-        // Get the tween values for r,g and b, and send them out
-        // Could also tween the number of lit lights?
-
-        pixels.setPixelColor(i, pixel_colour);
+      if (pixel_colour != last_pixel_colour) {
+        last_pixel_colour = pixel_colour;
+        update_pixels(pixel_colour);
       }
-      pixels.show();
     }
   }
 
