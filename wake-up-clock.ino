@@ -26,7 +26,6 @@
  */
 
 #define DEBUG
-#define LCD_ENABLED
 
 #define TOP 252
 
@@ -38,8 +37,6 @@
 #define RTC_INTERRUPT 0
 
 #include <math.h>
-#include <LiquidCrystal_I2C.h>
-#include <Wire.h>
 #include <RTClib.h>
 #include <SerialCommand.h>
 #include <EEPROM.h>
@@ -52,11 +49,6 @@
 
 RTC_DS1307 rtc;
 
-#ifdef LCD_ENABLED
-#define I2C_ADDR_LCD 0x38
-LiquidCrystal_I2C lcd(I2C_ADDR_LCD);
-#endif
-
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NEO_NUMPIX, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 SerialCommand sCmd;
@@ -66,48 +58,6 @@ boolean update_enabled = false;
 void isr_rtc_interrupt() {
   update_enabled = true;
 }
-
-#ifdef LCD_ENABLED
-#define NUM_CUSTOM_GLYPHS 5
-byte glyphs[NUM_CUSTOM_GLYPHS][8] = {
-  { B11111, B11111, B00000, B00000, B00000, B00000, B00000, B00000 },
-  { B00000, B00000, B00000, B00000, B00000, B00000, B11111, B11111 },
-  { B11111, B11111, B00000, B00000, B00000, B00000, B11111, B11111 },
-  { B11111, B11111, B11111, B11111, B11111, B11111, B11111, B11111 },
-  { B00000, B00000, B01110, B01110, B01110, B01110, B00000, B00000 }
-};
-
-const int digitWidth = 3;
-
-// 32 is a space
-const char bigDigitsTop[11][digitWidth] = {
-  {3 ,0 ,3 },
-  {0 ,3 ,32},
-  {2 ,2 ,3 },
-  {0 ,2 ,3 },
-  {3 ,1 ,3 },
-  {3 ,2 ,2 },
-  {3 ,2 ,2 },
-  {0 ,0 ,3 },
-  {3 ,2 ,3 },
-  {3 ,2 ,3 },
-  {32,4 ,32}
-};
-
-const char bigDigitsBottom[11][digitWidth] = {
-  {3 ,1 ,3 },
-  {1 ,3 ,1 },
-  {3 ,1 ,1 },
-  {1 ,1 ,3 },
-  {32,32,3 },
-  {1 ,1 ,3 },
-  {3 ,1 ,3 },
-  {32,32,3 },
-  {3 ,1 ,3 },
-  {1 ,1 ,3 },
-  {32,4 ,32}
-};
-#endif
 
 char buffer[12];
 boolean alarm_triggered = false;
@@ -401,85 +351,6 @@ struct Colour hslToRgb(struct HSL *hsl) {
   return rgb; // here you go!
 }
 
-uint8_t last_mins = 0; // Last displayed minutes
-uint8_t last_hour = 0; // Last displayed hour
-
-void showDigit(int digit, int position, int extra_offset) {
-  int x = position * (digitWidth + 1) + extra_offset;
-
-  lcd.setCursor(x, 0);
-  for (int i=0; i<digitWidth; i++) {
-    lcd.write( bigDigitsTop[digit][i] );
-  }
-
-  lcd.setCursor(x, 1);
-  for (int i=0; i<digitWidth; i++) {
-    lcd.write( bigDigitsBottom[digit][i] );
-  }
-}
-
-void showNumber(int value, int position, int extra_offset) {
-  int index;
-  itoa(value, buffer, 10);
-  for (index=0; index<10; index++) {
-    char c = buffer[index];
-    if (c==0) {
-      return;
-    }
-    c -= 48;
-    showDigit(c, position + index, extra_offset);
-  }
-}
-
-void showColon(boolean showHide) {
-  if (showHide) {
-    lcd.setCursor( 7, 0 );
-    lcd.write( 4 );
-    lcd.setCursor( 7, 1 );
-    lcd.write( 4 );
-  }
-  else {
-    lcd.setCursor( 7, 0 );
-    lcd.write( 32 );
-    lcd.setCursor( 7, 1 );
-    lcd.write( 32 );
-  }
-}
-
-DateTime last_time = (2000,1,1,0,0,0);
-void showTime( DateTime *now ) {
-  if (now->unixtime() == last_time.unixtime()) return;
-
-  last_time = *now;
-
-  // If the time hasn't changed, no need to update the display
-  if (now->hour() != last_hour) {
-    last_hour = now->hour();
-    if (now->hour() < 10) {
-      showNumber( 0, 0, 0 );
-      showNumber( now->hour(), 1, 0 );
-    }
-    else {
-      showNumber( now->hour(), 0, 0 );
-    }
-  }
-
-  // Blinking colon for seconds display!
-  showColon( now->second() & 1 );
-
-  if (now->minute() != last_mins) {
-    last_mins = now->minute();
-    if (now->minute() >= 10) {
-      showNumber( now->minute(), 2, 0 );
-    }
-    else {
-      showNumber( 0, 2, 0 );
-      showNumber( now->minute(), 3, 0 );
-    }
-  }
-
-}
-
 uint8_t  phase                = 0;
 uint16_t sunrise_counter      = 0;
 uint32_t sunrise_last_invoked = 0;
@@ -658,9 +529,6 @@ void loop() {
     update_enabled = false;
 
     DateTime now = rtc.now();
-#ifdef LCD_ENABLED
-    showTime( &now );
-#endif
 
     if (alarm_triggered == false) {
       uint16_t nowtime = (now.hour()*100) + now.minute();
